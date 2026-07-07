@@ -1,0 +1,13 @@
+{
+  "name": "apex-tiers",
+  "version": "1.0.0",
+  "description": "Apex Tiers - Minecraft PvP tier list site, fed by a BotGhost Discord bot",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
