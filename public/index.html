@@ -389,11 +389,6 @@
         <button class="info-tab active" data-tab="titles">Titles</button>
         <button class="info-tab" data-tab="points">Points</button>
       </div>
-      <div class="search-bar">
-  <input type="text" id="playerSearch" placeholder="ითამაშის სახელი მოძებნა..." autocomplete="off">
-  <button id="searchBtn">🔍</button>
-</div>
-      <div class="search-error" id="searchError">მოთამაშე ვერ მოიძებნა</div>
       <div class="info-body" id="infoBodyTitles">
         <div class="info-hint">ტიტული განისაზღვრება მთლიანი ქულების მიხედვით</div>
         <div id="titlesList"></div>
@@ -404,7 +399,11 @@
       </div>
     </div>
   </header>
-
+   <div class="search-bar">
+    <input type="text" id="playerSearch" placeholder="ითამაშის სახელი მოძებნა..." autocomplete="off">
+    <button id="searchBtn">🔍</button>
+  </div>
+  <div class="search-error" id="searchError">მოთამაშე ვერ მოიძებნა</div>
   <nav class="tabs" id="tabs"></nav>
 
   <div class="statusbar">
