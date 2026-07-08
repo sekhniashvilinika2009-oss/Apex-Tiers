@@ -48,13 +48,11 @@
     flex-wrap:wrap;gap:16px;
   }
   .brand{display:flex;align-items:center;gap:10px;}
-  .brand-mark{
-    width:34px;height:34px;border-radius:8px;
-    background:linear-gradient(150deg,var(--orange),#c9560a);
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Rajdhani',sans-serif;font-weight:700;color:#161616;font-size:16px;
-    box-shadow:0 0 18px rgba(255,140,26,0.35);
-  }
+ .brand-mark{
+  width:34px;height:34px;border-radius:8px;
+  object-fit:cover;
+  box-shadow:0 0 18px rgba(255,140,26,0.35);
+}
   .brand-name{
     font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;letter-spacing:.02em;
   }
@@ -230,9 +228,9 @@
   <header>
     <div class="header-top">
       <div class="brand">
-        <div class="brand-mark">A</div>
-        <div class="brand-name">APEX <span class="accent">TIERS</span></div>
-      </div>
+  <img src="https://media.discordapp.net/attachments/1426897196313481363/1524335898936868964/Gemini_Generated_Image_3o1att3o1att3o1a.png?ex=6a4f5fef&is=6a4e0e6f&hm=6903616b4bb7e6bebde1d0270ed0d3a70d2e3731c923ad917a6fd7017bc72d32&=&format=webp&quality=lossless&width=873&height=873" alt="Apex Tiers" class="brand-mark">
+  <div class="brand-name">APEX <span class="accent">TIERS</span></div>
+</div>
       <div class="header-actions">
         <button class="info-btn" id="infoBtn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/></svg>
