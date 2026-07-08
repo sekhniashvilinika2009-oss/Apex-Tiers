@@ -15,6 +15,9 @@ app.get('/api/players', (req, res) => {
   res.json({
     kits: db.KITS,
     players: db.getAllPlayers(),
+    titles: db.TITLES,
+    tierPoints: db.TIER_POINTS,
+    tierOrder: db.TIER_ORDER,
   });
 });
 
