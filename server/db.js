@@ -19,20 +19,23 @@ const KITS = [
 // ---- Tier point values (edit freely) ----
 const TIER_ORDER = ['HT1','LT1','HT2','LT2','HT3','LT3','HT4','LT4','HT5','LT5'];
 const TIER_POINTS = {
-  HT1: 10, LT1: 9,
-  HT2: 8,  LT2: 7,
-  HT3: 6,  LT3: 5,
+  HT1: 60, LT1: 45,
+  HT2: 30, LT2: 20,
+  HT3: 10, LT3: 6,
   HT4: 4,  LT4: 3,
   HT5: 2,  LT5: 1,
 };
 
 // ---- Titles by total points (edit freely) ----
+// icon = which built-in icon shape the site draws (see public/index.html TITLE_ICONS)
 const TITLES = [
-  { min: 400, name: 'Combat Grandmaster' },
-  { min: 250, name: 'Combat Master' },
-  { min: 100, name: 'Combat Ace' },
-  { min: 50,  name: 'Combat Specialist' },
-  { min: 0,   name: 'Combat Rookie' },
+  { min: 400, name: 'Combat Grandmaster', icon: 'grandmaster' },
+  { min: 250, name: 'Combat Master',       icon: 'master' },
+  { min: 100, name: 'Combat Ace',          icon: 'ace' },
+  { min: 50,  name: 'Combat Specialist',   icon: 'specialist' },
+  { min: 20,  name: 'Combat Cadet',        icon: 'cadet' },
+  { min: 10,  name: 'Combat Novice',       icon: 'novice' },
+  { min: 0,   name: 'Rookie',              icon: 'rookie' },
 ];
 
 const REGIONS = ['NA', 'EU', 'AS', 'OC', 'SA'];
@@ -63,6 +66,13 @@ function computeTitle(points) {
   return TITLES[TITLES.length - 1].name;
 }
 
+function computeTitleInfo(points) {
+  for (const t of TITLES) {
+    if (points >= t.min) return t;
+  }
+  return TITLES[TITLES.length - 1];
+}
+
 function getPlayer(ign) {
   const data = loadData();
   return data.players[key(ign)] || null;
@@ -72,7 +82,8 @@ function getAllPlayers() {
   const data = loadData();
   return Object.values(data.players).map(p => {
     const points = computePoints(p.tiers);
-    return { ...p, points, title: computeTitle(points) };
+    const titleInfo = computeTitleInfo(points);
+    return { ...p, points, title: titleInfo.name, titleIcon: titleInfo.icon };
   }).sort((a, b) => b.points - a.points);
 }
 
@@ -106,5 +117,5 @@ function removeTier(ign, kit) {
 module.exports = {
   KITS, TIER_ORDER, TIER_POINTS, TITLES, REGIONS,
   loadData, saveData, getPlayer, getAllPlayers,
-  setTier, removeTier, computePoints, computeTitle,
+  setTier, removeTier, computePoints, computeTitle, computeTitleInfo,
 };
