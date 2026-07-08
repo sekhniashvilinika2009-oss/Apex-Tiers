@@ -127,7 +127,11 @@
   nav.tabs button .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.7;}
   nav.tabs button.active{color:var(--orange-2);border-bottom-color:var(--orange);}
   nav.tabs button:hover{color:var(--text);}
-
+  nav.tabs button .tab-icon{
+  width:15px;
+  height:15px;
+  object-fit:contain;
+}
   .statusbar{
     display:flex;align-items:center;justify-content:space-between;
     color:var(--muted);font-size:12.5px;margin-bottom:14px;flex-wrap:wrap;gap:8px;
@@ -333,17 +337,17 @@
   }
 
   function renderTabs(){
-    tabsEl.innerHTML = '';
-    const mk = (key,label) => {
-      const b = document.createElement('button');
-      b.innerHTML = (key!=='overall' ? `<span class="dot" style="color:${KIT_COLORS[key]||'var(--orange)'}"></span>` : '') + label;
-      if(key === activeTab) b.classList.add('active');
-      b.onclick = () => { activeTab = key; render(); };
-      tabsEl.appendChild(b);
-    };
-    mk('overall','OVERALL');
-    KITS.forEach(k => mk(k.key, k.label.toUpperCase()));
-  }
+  tabsEl.innerHTML = '';
+  const mk = (key,label) => {
+    const b = document.createElement('button');
+    b.innerHTML = (key!=='overall' ? `<img src="${KIT_ICONS[key]}" alt="${key}" class="tab-icon">` : '') + label;
+    if(key === activeTab) b.classList.add('active');
+    b.onclick = () => { activeTab = key; render(); };
+    tabsEl.appendChild(b);
+  };
+  mk('overall','OVERALL');
+  KITS.forEach(k => mk(k.key, k.label.toUpperCase()));
+}
 
   function avatarUrl(ign){
     return `https://mc-heads.net/avatar/${encodeURIComponent(ign)}/64`;
