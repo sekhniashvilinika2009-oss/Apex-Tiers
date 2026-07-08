@@ -213,7 +213,50 @@
   .empty-state{
     text-align:center;color:var(--muted);padding:50px 20px;font-size:14px;
   }
+.tier-columns{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  align-items:start;
+}
+.tier-col{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+}
+.tier-col-head{
+  font-family:'Rajdhani',sans-serif;
+  font-weight:700;
+  font-size:16px;
+  padding:12px 14px;
+  border-bottom:1px solid var(--line);
+}
+.tier-col-head.t1{background:linear-gradient(135deg,rgba(255,203,99,.18),transparent);color:var(--gold);}
+.tier-col-head.t2{background:linear-gradient(135deg,rgba(184,185,194,.16),transparent);color:var(--silver);}
+.tier-col-head.t3{background:linear-gradient(135deg,rgba(255,140,26,.18),transparent);color:var(--orange-2);}
+.tier-col-head.t4{background:linear-gradient(135deg,rgba(126,140,255,.14),transparent);color:#9aa3d6;}
+.tier-col-head.t5{background:linear-gradient(135deg,rgba(139,140,152,.12),transparent);color:var(--muted);}
 
+.tier-col-body{padding:4px 0;}
+.tier-player{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 14px;font-size:14px;font-weight:600;
+}
+.tier-player img{
+  width:24px;height:24px;border-radius:5px;
+  image-rendering:pixelated;flex:none;background:var(--panel-2);
+}
+.tier-player.ht{ color:#ffffff; }
+.tier-player.lt{ color:var(--muted); }
+.tier-empty{ padding:14px;color:var(--muted);font-size:12.5px;text-align:center; }
+
+@media (max-width:900px){
+  .tier-columns{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:640px){
+  .tier-columns{grid-template-columns:1fr;}
+}
   @media (max-width:640px){
     .list-head{display:none;}
     .row{grid-template-columns:36px 1fr;grid-template-rows:auto auto;row-gap:8px;}
@@ -378,27 +421,49 @@
     return row;
   }
 
-  function renderKitRow(p, rank, kitKey){
-    const t = p.tiers[kitKey];
-    const row = document.createElement('div');
-    row.className = 'row rank-' + rank;
-    row.style.gridTemplateColumns = '52px 1fr 70px auto';
-    row.innerHTML = `
-      <div class="rank">${rank}</div>
-      <div class="player">
-        <img src="${avatarUrl(p.ign)}" alt="${p.ign}" loading="lazy">
-        <div class="player-meta">
-          <div class="player-name">${p.ign}</div>
-        </div>
-      </div>
-      <div class="region">${p.region || '—'}</div>
-      <div class="single-tier">
-        <div class="icon" style="width:26px;height:26px;border-radius:50%;overflow:hidden;"><img src="${KIT_ICONS[kitKey]}" alt="${kitKey}" style="width:100%;height:100%;object-fit:cover;"></div>
-      </div>
-    `;
-    return row;
+ function renderKitColumns(kitKey){
+  const wrap = document.createElement('div');
+  wrap.className = 'tier-columns';
+
+  for(let tierNum = 1; tierNum <= 5; tierNum++){
+    const col = document.createElement('div');
+    col.className = 'tier-col';
+
+    const head = document.createElement('div');
+    head.className = 'tier-col-head t' + tierNum;
+    head.textContent = 'Tier ' + tierNum;
+    col.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'tier-col-body';
+
+    const players = PLAYERS.filter(p => {
+      const t = p.tiers[kitKey];
+      return t === 'HT' + tierNum || t === 'LT' + tierNum;
+    }).sort((a,b) => {
+      const aHT = a.tiers[kitKey].startsWith('HT') ? 0 : 1;
+      const bHT = b.tiers[kitKey].startsWith('HT') ? 0 : 1;
+      return aHT - bHT;
+    });
+
+    if(!players.length){
+      body.innerHTML = '<div class="tier-empty">—</div>';
+    } else {
+      players.forEach(p => {
+        const isHT = p.tiers[kitKey].startsWith('HT');
+        const row = document.createElement('div');
+        row.className = 'tier-player ' + (isHT ? 'ht' : 'lt');
+        row.innerHTML = `<img src="${avatarUrl(p.ign)}" alt="${p.ign}" loading="lazy">${p.ign}`;
+        body.appendChild(row);
+      });
+    }
+
+    col.appendChild(body);
+    wrap.appendChild(col);
   }
 
+  boardEl.appendChild(wrap);
+}
   function render(){
     renderTabs();
     boardEl.innerHTML = '';
@@ -412,15 +477,14 @@
       }
       PLAYERS.forEach((p, i) => boardEl.appendChild(renderOverallRow(p, i+1)));
     } else {
-      listHead.style.display = 'grid';
-      listHead.children[3].textContent = 'TIER';
-      const withKit = PLAYERS.filter(p => p.tiers[activeTab]).sort((a,b) => TIER_ORDER.indexOf(a.tiers[activeTab]) - TIER_ORDER.indexOf(b.tiers[activeTab]));
-      if(!withKit.length){
-        boardEl.innerHTML = '<div class="empty-state">ამ კითისთვის ჯერ არცერთი შედეგი არ არის.</div>';
-        return;
-      }
-      withKit.forEach((p, i) => boardEl.appendChild(renderKitRow(p, i+1, activeTab)));
-    }
+  listHead.style.display = 'none';
+  const anyPlayers = PLAYERS.some(p => p.tiers[activeTab]);
+  if(!anyPlayers){
+    boardEl.innerHTML = '<div class="empty-state">ამ კითისთვის ჯერ არცერთი შედეგი არ არის.</div>';
+    return;
+  }
+  renderKitColumns(activeTab);
+}
   }
 
   function renderInfoPanel(){
