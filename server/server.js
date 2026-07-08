@@ -50,7 +50,23 @@ app.post('/api/submit', (req, res) => {
     res.status(400).json({ ok: false, error: err.message });
   }
 });
-
+app.post('/api/remove', (req, res) => {
+  const { secret, player, kit } = req.body || {};
+  if (!API_SECRET || secret !== API_SECRET) {
+    return res.status(401).json({ ok: false, error: 'Invalid or missing secret' });
+  }
+  if (!player || !kit) {
+    return res.status(400).json({ ok: false, error: 'player and kit are required' });
+  }
+  try {
+    const updated = db.removeTier(player, kit.toLowerCase());
+    if (!updated) return res.status(404).json({ ok: false, error: 'Player not found' });
+    const points = db.computePoints(updated.tiers);
+    res.json({ ok: true, player: updated.ign, kit, points, title: db.computeTitle(points) });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {
