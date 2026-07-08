@@ -26,8 +26,7 @@ app.get('/api/players/:ign', (req, res) => {
   const player = db.getPlayer(req.params.ign);
   if (!player) return res.status(404).json({ error: 'Player not found' });
   const points = db.computePoints(player.tiers);
-  const titleInfo = db.computeTitleInfo(points);
-  res.json({ ...player, points, title: titleInfo.name, titleIcon: titleInfo.icon });
+  res.json({ ...player, points, title: db.computeTitle(points) });
 });
 
 // POST /api/submit — called by your BotGhost /result command's "Send an API Request" action.
@@ -49,21 +48,6 @@ app.post('/api/submit', (req, res) => {
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
   }
-});
-
-// DELETE /api/players/:ign/:kit — removes one kit's tier from a player. Used by the
-// site's own "cancel a result" button. Requires the same secret as /api/submit.
-// Body (JSON): { "secret": "..." }
-app.delete('/api/players/:ign/:kit', (req, res) => {
-  const { secret } = req.body || {};
-  if (!API_SECRET || secret !== API_SECRET) {
-    return res.status(401).json({ ok: false, error: 'Invalid or missing secret' });
-  }
-  const updated = db.removeTier(req.params.ign, req.params.kit.toLowerCase());
-  if (!updated) return res.status(404).json({ ok: false, error: 'Player not found' });
-  const points = db.computePoints(updated.tiers);
-  const titleInfo = db.computeTitleInfo(points);
-  res.json({ ok: true, ign: updated.ign, points, title: titleInfo.name, titleIcon: titleInfo.icon, tiers: updated.tiers });
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
