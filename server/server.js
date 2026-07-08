@@ -34,6 +34,7 @@ app.get('/api/players/:ign', (req, res) => {
 app.post('/api/submit', (req, res) => {
   console.log('SUBMIT HIT:', JSON.stringify(req.body));
   const { secret, player, kit, tier, region } = req.body || {};
+  console.log('ENV SECRET:', API_SECRET, '| RECEIVED:', secret, '| MATCH:', secret === API_SECRET);
   if (!API_SECRET || secret !== API_SECRET) {
     return res.status(401).json({ ok: false, error: 'Invalid or missing secret' });
   }
