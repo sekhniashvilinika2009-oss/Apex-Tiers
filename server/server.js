@@ -32,8 +32,8 @@ app.get('/api/players/:ign', (req, res) => {
 // POST /api/submit — called by your BotGhost /result command's "Send an API Request" action.
 // Body (JSON): { "secret": "...", "player": "Steve123", "kit": "sword", "tier": "HT1", "region": "NA" }
 app.post('/api/submit', (req, res) => {
+  console.log('SUBMIT HIT:', JSON.stringify(req.body));
   const { secret, player, kit, tier, region } = req.body || {};
-
   if (!API_SECRET || secret !== API_SECRET) {
     return res.status(401).json({ ok: false, error: 'Invalid or missing secret' });
   }
