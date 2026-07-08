@@ -323,6 +323,32 @@
 .modal-tier-cell img{ width:24px; height:24px; }
 .modal-tier-cell .code{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px; }
 .modal-tier-cell.empty{ opacity:.35; }
+  .search-bar{
+  display:flex; gap:8px; margin-bottom:16px;
+}
+.search-bar input{
+  flex:1;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:10px 14px;
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  font-size:14px;
+  outline:none;
+}
+.search-bar input:focus{ border-color:var(--orange); }
+.search-bar input::placeholder{ color:var(--muted); }
+.search-bar button{
+  background:var(--panel); border:1px solid var(--line);
+  color:var(--text); border-radius:9px; padding:0 16px;
+  cursor:pointer; font-size:15px;
+}
+.search-bar button:hover{ border-color:var(--orange); }
+.search-error{
+  color:#ff6b6b; font-size:12.5px; margin:-8px 0 12px 2px; display:none;
+}
+.search-error.show{ display:block; }
 @media (max-width:900px){
   .tier-columns{grid-template-columns:1fr 1fr;}
 }
@@ -363,6 +389,11 @@
         <button class="info-tab active" data-tab="titles">Titles</button>
         <button class="info-tab" data-tab="points">Points</button>
       </div>
+      <div class="search-bar">
+  <input type="text" id="playerSearch" placeholder="ითამაშის სახელი მოძებნა..." autocomplete="off">
+  <button id="searchBtn">🔍</button>
+</div>
+      <div class="search-error" id="searchError">მოთამაშე ვერ მოიძებნა</div>
       <div class="info-body" id="infoBodyTitles">
         <div class="info-hint">ტიტული განისაზღვრება მთლიანი ქულების მიხედვით</div>
         <div id="titlesList"></div>
@@ -608,7 +639,28 @@ function openPlayerModal(ign){
   renderKitColumns(activeTab);
 }
   }
+const playerSearch = document.getElementById('playerSearch');
+const searchBtn = document.getElementById('searchBtn');
+const searchError = document.getElementById('searchError');
 
+function doSearch(){
+  const query = playerSearch.value.trim().toLowerCase();
+  if(!query) return;
+  const match = PLAYERS.find(p => p.ign.toLowerCase() === query);
+  if(match){
+    searchError.classList.remove('show');
+    openPlayerModal(match.ign);
+    playerSearch.value = '';
+  } else {
+    searchError.classList.add('show');
+  }
+}
+
+searchBtn.onclick = doSearch;
+playerSearch.onkeydown = (e) => {
+  if(e.key === 'Enter') doSearch();
+};
+playerSearch.oninput = () => searchError.classList.remove('show');
   function renderInfoPanel(){
     const titlesList = document.getElementById('titlesList');
     titlesList.innerHTML = TITLES_DATA.map(t => `
