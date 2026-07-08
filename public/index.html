@@ -250,7 +250,79 @@
 .tier-player.ht{ color:#ffffff; }
 .tier-player.lt{ color:var(--muted); }
 .tier-empty{ padding:14px;color:var(--muted);font-size:12.5px;text-align:center; }
+.modal-overlay{
+  display:none;
+  position:fixed; inset:0; z-index:100;
+  background:rgba(8,9,12,.72);
+  align-items:center; justify-content:center;
+  padding:20px;
+}
+.modal-overlay.open{ display:flex; }
+.modal-card{
+  position:relative;
+  width:420px; max-width:100%;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:28px 24px 24px;
+  text-align:center;
+}
+.modal-close{
+  position:absolute; top:14px; right:14px;
+  width:30px; height:30px; border-radius:50%;
+  background:var(--panel-2); border:1px solid var(--line);
+  color:var(--text); cursor:pointer; font-size:14px;
+}
+.modal-close:hover{ border-color:var(--orange); color:var(--orange-2); }
 
+.modal-avatar-wrap{
+  width:84px; height:84px; margin:0 auto 12px;
+  border-radius:50%; border:2px solid var(--orange);
+  overflow:hidden; box-shadow:0 0 20px rgba(255,140,26,.3);
+}
+.modal-avatar-wrap img{ width:100%; height:100%; object-fit:cover; }
+
+.modal-name{
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:24px;
+  margin-bottom:8px;
+}
+.modal-title-badge{
+  display:inline-block;
+  background:var(--panel-2); border:1px solid var(--line);
+  color:var(--orange-2);
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px;
+  padding:6px 14px; border-radius:20px; margin-bottom:10px;
+}
+.modal-region{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+
+.modal-section-label{
+  text-align:left; color:var(--muted); font-size:11px;
+  letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; margin-top:16px;
+}
+.modal-position{
+  display:flex; align-items:center; gap:10px;
+  background:var(--panel-2); border:1px solid var(--line);
+  border-radius:9px; padding:12px 14px;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:15px;
+  text-align:left;
+}
+.modal-position .rank-num{
+  background:var(--orange); color:#161616;
+  border-radius:6px; padding:3px 9px; font-size:14px;
+}
+.modal-position .pos-pts{ margin-left:auto; color:var(--orange-2); }
+
+.modal-tiers{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+}
+.modal-tier-cell{
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  background:var(--panel-2); border:1px solid var(--line);
+  border-radius:9px; padding:10px 4px;
+}
+.modal-tier-cell img{ width:24px; height:24px; }
+.modal-tier-cell .code{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12.5px; }
+.modal-tier-cell.empty{ opacity:.35; }
 @media (max-width:900px){
   .tier-columns{grid-template-columns:1fr 1fr;}
 }
@@ -312,9 +384,25 @@
   <div class="list-head" id="listHead">
     <div>#</div><div>PLAYER</div><div>REGION</div><div style="text-align:right;">TIERS</div>
   </div>
-
+   
   <div id="board"></div>
+  <div class="modal-overlay" id="playerModal">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-avatar-wrap">
+      <img id="modalAvatar" src="" alt="">
+    </div>
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-title-badge" id="modalTitle"></div>
+    <div class="modal-region" id="modalRegion"></div>
 
+    <div class="modal-section-label">POSITION</div>
+    <div class="modal-position" id="modalPosition"></div>
+
+    <div class="modal-section-label">TIERS</div>
+    <div class="modal-tiers" id="modalTiers"></div>
+  </div>
+</div>
 </div>
 
 <script>
@@ -418,6 +506,8 @@
 }).join('')}
       </div>
     `;
+     row.style.cursor = 'pointer';
+    row.onclick = () => openPlayerModal(p.ign);
     return row;
   }
 
@@ -454,6 +544,8 @@
         const row = document.createElement('div');
         row.className = 'tier-player ' + (isHT ? 'ht' : 'lt');
         row.innerHTML = `<img src="${avatarUrl(p.ign)}" alt="${p.ign}" loading="lazy">${p.ign}`;
+        row.style.cursor = 'pointer';
+        row.onclick = () => openPlayerModal(p.ign);
         body.appendChild(row);
       });
     }
@@ -463,6 +555,36 @@
   }
 
   boardEl.appendChild(wrap);
+} 
+  const playerModal = document.getElementById('playerModal');
+document.getElementById('modalClose').onclick = () => playerModal.classList.remove('open');
+playerModal.onclick = (e) => { if(e.target === playerModal) playerModal.classList.remove('open'); };
+
+function openPlayerModal(ign){
+  const p = PLAYERS.find(pl => pl.ign.toLowerCase() === ign.toLowerCase());
+  if(!p) return;
+
+  const rank = PLAYERS.findIndex(pl => pl.ign.toLowerCase() === ign.toLowerCase()) + 1;
+
+  document.getElementById('modalAvatar').src = avatarUrl(p.ign);
+  document.getElementById('modalName').textContent = p.ign;
+  document.getElementById('modalTitle').textContent = p.title;
+  document.getElementById('modalRegion').textContent = p.region || '—';
+
+  document.getElementById('modalPosition').innerHTML = `
+    <span class="rank-num">${rank}.</span>
+    <span>OVERALL</span>
+    <span class="pos-pts">${p.points} points</span>
+  `;
+
+  const tiersEl = document.getElementById('modalTiers');
+  tiersEl.innerHTML = KITS.map(k => {
+    const t = p.tiers[k.key];
+    if(!t) return `<div class="modal-tier-cell empty"><img src="${KIT_ICONS[k.key]}" alt="${k.key}"><span class="code">—</span></div>`;
+    return `<div class="modal-tier-cell"><img src="${KIT_ICONS[k.key]}" alt="${k.key}"><span class="code" style="color:${tierColor(t)}">${t}</span></div>`;
+  }).join('');
+
+  playerModal.classList.add('open');
 }
   function render(){
     renderTabs();
