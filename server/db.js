@@ -1,7 +1,19 @@
-const fs = require('fs');
-const path = require('path');
+const { MongoClient } = require('mongodb');
 
-const DATA_FILE = path.join(__dirname, 'data.json');
+let client = null;
+let playersCol = null;
+
+async function connect() {
+  if (playersCol) return playersCol;
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not set');
+  }
+  client = new MongoClient(process.env.MONGODB_URI);
+  await client.connect();
+  const db = client.db('apextiers');
+  playersCol = db.collection('players');
+  return playersCol;
+}
 
 // ---- Configure your kits here ----
 // key = internal id (used in commands), label = shown on site
@@ -40,17 +52,6 @@ const TITLES = [
 
 const REGIONS = ['NA', 'EU', 'AS', 'OC', 'SA'];
 
-function loadData() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ players: {} }, null, 2));
-  }
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-}
-
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
 function key(ign) {
   return ign.trim().toLowerCase();
 }
@@ -73,49 +74,54 @@ function computeTitleInfo(points) {
   return TITLES[TITLES.length - 1];
 }
 
-function getPlayer(ign) {
-  const data = loadData();
-  return data.players[key(ign)] || null;
+async function getPlayer(ign) {
+  const col = await connect();
+  return col.findOne({ _id: key(ign) });
 }
 
-function getAllPlayers() {
-  const data = loadData();
-  return Object.values(data.players).map(p => {
+async function getAllPlayers() {
+  const col = await connect();
+  const docs = await col.find({}).toArray();
+  return docs.map(p => {
     const points = computePoints(p.tiers);
     const titleInfo = computeTitleInfo(points);
     return { ...p, points, title: titleInfo.name, titleIcon: titleInfo.icon };
   }).sort((a, b) => b.points - a.points);
 }
 
-function setTier(ign, kit, tier, region, updatedBy) {
+async function setTier(ign, kit, tier, region, updatedBy) {
   if (!KITS.some(k => k.key === kit)) throw new Error(`Unknown kit: ${kit}`);
   if (!TIER_ORDER.includes(tier)) throw new Error(`Unknown tier: ${tier}`);
-  const data = loadData();
+  const col = await connect();
   const k = key(ign);
-  if (!data.players[k]) {
-    data.players[k] = { ign, region: region || 'NA', tiers: {}, updatedAt: null, updatedBy: null };
-  }
-  data.players[k].ign = ign; // preserve display casing from most recent update
-  if (region) data.players[k].region = region;
-  data.players[k].tiers[kit] = tier;
-  data.players[k].updatedAt = new Date().toISOString();
-  data.players[k].updatedBy = updatedBy || null;
-  saveData(data);
-  return data.players[k];
+
+  let doc = await col.findOne({ _id: k });
+  if (!doc) doc = { _id: k, ign, region: region || 'NA', tiers: {}, updatedAt: null, updatedBy: null };
+
+  doc.ign = ign; // preserve display casing from most recent update
+  if (region) doc.region = region;
+  doc.tiers = doc.tiers || {};
+  doc.tiers[kit] = tier;
+  doc.updatedAt = new Date().toISOString();
+  doc.updatedBy = updatedBy || null;
+
+  await col.replaceOne({ _id: k }, doc, { upsert: true });
+  return doc;
 }
 
-function removeTier(ign, kit) {
-  const data = loadData();
+async function removeTier(ign, kit) {
+  const col = await connect();
   const k = key(ign);
-  if (!data.players[k]) return null;
-  delete data.players[k].tiers[kit];
-  data.players[k].updatedAt = new Date().toISOString();
-  saveData(data);
-  return data.players[k];
+  const doc = await col.findOne({ _id: k });
+  if (!doc) return null;
+  if (doc.tiers) delete doc.tiers[kit];
+  doc.updatedAt = new Date().toISOString();
+  await col.replaceOne({ _id: k }, doc, { upsert: true });
+  return doc;
 }
 
 module.exports = {
   KITS, TIER_ORDER, TIER_POINTS, TITLES, REGIONS,
-  loadData, saveData, getPlayer, getAllPlayers,
+  connect, getPlayer, getAllPlayers,
   setTier, removeTier, computePoints, computeTitle, computeTitleInfo,
 };
