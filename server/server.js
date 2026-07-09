@@ -11,30 +11,41 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // GET /api/players — full leaderboard, sorted by points desc
-app.get('/api/players', (req, res) => {
-  res.json({
-    kits: db.KITS,
-    players: db.getAllPlayers(),
-    titles: db.TITLES,
-    tierPoints: db.TIER_POINTS,
-    tierOrder: db.TIER_ORDER,
-  });
+app.get('/api/players', async (req, res) => {
+  try {
+    const players = await db.getAllPlayers();
+    res.json({
+      kits: db.KITS,
+      players,
+      titles: db.TITLES,
+      tierPoints: db.TIER_POINTS,
+      tierOrder: db.TIER_ORDER,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error: ' + err.message });
+  }
 });
 
 // GET /api/players/:ign — single player lookup
-app.get('/api/players/:ign', (req, res) => {
-  const player = db.getPlayer(req.params.ign);
-  if (!player) return res.status(404).json({ error: 'Player not found' });
-  const points = db.computePoints(player.tiers);
-  res.json({ ...player, points, title: db.computeTitle(points) });
+app.get('/api/players/:ign', async (req, res) => {
+  try {
+    const player = await db.getPlayer(req.params.ign);
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    const points = db.computePoints(player.tiers);
+    const titleInfo = db.computeTitleInfo(points);
+    res.json({ ...player, points, title: titleInfo.name, titleIcon: titleInfo.icon });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error: ' + err.message });
+  }
 });
 
 // POST /api/submit — called by your BotGhost /result command's "Send an API Request" action.
 // Body (JSON): { "secret": "...", "player": "Steve123", "kit": "sword", "tier": "HT1", "region": "NA" }
-app.post('/api/submit', (req, res) => {
-  console.log('SUBMIT HIT:', JSON.stringify(req.body));
+app.post('/api/submit', async (req, res) => {
   const { secret, player, kit, tier, region } = req.body || {};
-  console.log('ENV SECRET:', API_SECRET, '| RECEIVED:', secret, '| MATCH:', secret === API_SECRET);
+
   if (!API_SECRET || secret !== API_SECRET) {
     return res.status(401).json({ ok: false, error: 'Invalid or missing secret' });
   }
@@ -43,32 +54,45 @@ app.post('/api/submit', (req, res) => {
   }
 
   try {
-    const updated = db.setTier(player, kit.toLowerCase(), tier.toUpperCase(), region ? region.toUpperCase() : undefined, 'botghost');
+    const updated = await db.setTier(player, kit.toLowerCase(), tier.toUpperCase(), region ? region.toUpperCase() : undefined, 'botghost');
     const points = db.computePoints(updated.tiers);
     res.json({ ok: true, player: updated.ign, kit, tier, points, title: db.computeTitle(points) });
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
   }
 });
-app.post('/api/remove', (req, res) => {
-  const { secret, player, kit } = req.body || {};
+
+// DELETE /api/players/:ign/:kit — removes one kit's tier from a player. Used by the
+// site's own "cancel a result" button. Requires the same secret as /api/submit.
+// Body (JSON): { "secret": "..." }
+app.delete('/api/players/:ign/:kit', async (req, res) => {
+  const { secret } = req.body || {};
   if (!API_SECRET || secret !== API_SECRET) {
     return res.status(401).json({ ok: false, error: 'Invalid or missing secret' });
   }
-  if (!player || !kit) {
-    return res.status(400).json({ ok: false, error: 'player and kit are required' });
-  }
   try {
-    const updated = db.removeTier(player, kit.toLowerCase());
+    const updated = await db.removeTier(req.params.ign, req.params.kit.toLowerCase());
     if (!updated) return res.status(404).json({ ok: false, error: 'Player not found' });
     const points = db.computePoints(updated.tiers);
-    res.json({ ok: true, player: updated.ign, kit, points, title: db.computeTitle(points) });
+    const titleInfo = db.computeTitleInfo(points);
+    res.json({ ok: true, ign: updated.ign, points, title: titleInfo.name, titleIcon: titleInfo.icon, tiers: updated.tiers });
   } catch (err) {
-    res.status(400).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
+
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-app.listen(PORT, () => {
-  console.log(`Apex Tiers API running on port ${PORT}`);
-});
+async function start() {
+  try {
+    await db.connect();
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error('Failed to connect to MongoDB:', err.message);
+  }
+  app.listen(PORT, () => {
+    console.log(`Apex Tiers API running on port ${PORT}`);
+  });
+}
+
+start();
