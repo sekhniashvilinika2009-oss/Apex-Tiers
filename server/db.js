@@ -26,6 +26,7 @@ const KITS = [
   { key: 'sword',    label: 'Sword' },
   { key: 'axe',      label: 'Axe' },
   { key: 'mace',     label: 'Mace' },
+  { key: 'spearmace', label: 'SpearMace' },
 ];
 
 // ---- Tier point values (edit freely) ----
