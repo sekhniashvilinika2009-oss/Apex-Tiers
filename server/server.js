@@ -31,7 +31,9 @@ const writeLimiter = rateLimit({
 app.use(generalLimiter);
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log('Visitor IP:', req.ip);
+  console.log('x-forwarded-for:', req.headers['x-forwarded-for']);
+  console.log('x-real-ip:', req.headers['x-real-ip']);
+  console.log('req.ip:', req.ip);
   next();
 });
 app.use(express.static(path.join(__dirname, '..', 'public')));
