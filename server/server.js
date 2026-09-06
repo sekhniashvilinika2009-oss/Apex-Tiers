@@ -30,6 +30,10 @@ const writeLimiter = rateLimit({
 
 app.use(generalLimiter);
 app.use(express.json());
+app.use((req, res, next) => {
+  console.log('Visitor IP:', req.ip);
+  next();
+});
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // GET /api/players — full leaderboard, sorted by points desc
